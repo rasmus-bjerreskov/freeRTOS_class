@@ -1,0 +1,3 @@
+testytest.cpp:10:1:testytest::testytest()	16	static
+testytest.cpp:15:1:testytest::~testytest()	16	static
+testytest.cpp:15:1:virtual testytest::~testytest()	16	static
