@@ -34,6 +34,8 @@
  * Public types/enumerations/variables
  ****************************************************************************/
 
+volatile bool secondary_SOS = false;
+
 /*****************************************************************************
  * Private functions
  ****************************************************************************/
@@ -51,27 +53,29 @@ static void prvSetupHardware(void)
 
 /* LED1 toggle thread */
 static void vLEDTask1(void *pvParameters) {
-	bool LedState = false;
+
+	int SOS[] = {4,4,4,2,2,2,4,4,4};
 
 	while (1) {
-		Board_LED_Set(0, LedState);
-		LedState = (bool) !LedState;
-
-		/* About a 3Hz on/off toggle rate */
-		vTaskDelay(configTICK_RATE_HZ / 6);
+		int i;
+		for (i = 0; i < 9; ++i) {
+			Board_LED_Set(0, false);
+			vTaskDelay(configTICK_RATE_HZ / 4);
+			Board_LED_Set(0, true);
+			vTaskDelay(configTICK_RATE_HZ / SOS[i]);
+		}
+		!secondary_SOS;
 	}
 }
 
 /* LED2 toggle thread */
 static void vLEDTask2(void *pvParameters) {
-	bool LedState = false;
 
 	while (1) {
-		Board_LED_Set(1, LedState);
-		LedState = (bool) !LedState;
+		Board_LED_Set(1, secondary_SOS);
 
-		/* About a 7Hz on/off toggle rate */
-		vTaskDelay(configTICK_RATE_HZ / 14);
+		/* A delay to prevent constant writes to the pint. Don't know if this is actually important */
+		vTaskDelay(configTICK_RATE_HZ / 8);
 	}
 }
 
