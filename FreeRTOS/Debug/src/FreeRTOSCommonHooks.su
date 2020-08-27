@@ -1,0 +1,5 @@
+FreeRTOSCommonHooks.c:60:6:FreeRTOSDelay	24	static
+FreeRTOSCommonHooks.c:69:15:vApplicationMallocFailedHook	16	static
+FreeRTOSCommonHooks.c:77:15:vApplicationIdleHook	4	static
+FreeRTOSCommonHooks.c:84:15:vApplicationStackOverflowHook	24	static
+FreeRTOSCommonHooks.c:98:15:vApplicationTickHook	4	static
