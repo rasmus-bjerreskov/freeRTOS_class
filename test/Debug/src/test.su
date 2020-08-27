@@ -2,5 +2,5 @@ test.cpp:42:13:void prvSetupHardware()	8	static
 test.cpp:53:13:void vLEDTask1(void*)	24	static
 test.cpp:66:13:void vLEDTask2(void*)	24	static
 test.cpp:79:13:void vUARTTask(void*)	24	static
-test.cpp:105:6:void vConfigureTimerForRunTimeStats()	8	static
-test.cpp:118:5:int main()	16	static
+test.cpp:106:6:void vConfigureTimerForRunTimeStats()	8	static
+test.cpp:119:5:int main()	16	static

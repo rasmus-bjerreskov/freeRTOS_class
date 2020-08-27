@@ -82,8 +82,9 @@ static void vUARTTask(void *pvParameters) {
 
 
 	while (1) {
-		DEBUGOUT("Tick: %d:%d \r\n", minutes, tickCnt);
+		DEBUGOUT("Tick: %02d:%02d \r\n", minutes, tickCnt);
 
+		++tickCnt;
 		if (tickCnt > 59) {
 			tickCnt = 0;
 			++minutes;
