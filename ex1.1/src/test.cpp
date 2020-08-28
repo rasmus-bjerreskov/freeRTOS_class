@@ -1,12 +1,12 @@
 /*
-===============================================================================
+ ===============================================================================
  Name        : main.c
  Author      : $(author)
  Version     :
  Copyright   : $(copyright)
  Description : main definition
-===============================================================================
-*/
+ ===============================================================================
+ */
 
 #if defined (__USE_LPCOPEN)
 #if defined(NO_BOARD_LIB)
@@ -42,8 +42,7 @@ volatile bool secondary_SOS = false;
  ****************************************************************************/
 
 /* Sets up system hardware */
-static void prvSetupHardware(void)
-{
+static void prvSetupHardware(void) {
 	SystemCoreClockUpdate();
 	Board_Init();
 	heap_monitor_setup();
@@ -55,17 +54,19 @@ static void prvSetupHardware(void)
 /* LED1 toggle thread */
 static void vLEDTask1(void *pvParameters) {
 
-	int SOS[] = {4,4,4,2,2,2,4,4,4};
+	int SOS[] = { 4, 4, 4, 2, 2, 2, 4, 4, 4 };
+	Board_LED_Set(0, false);
 
 	while (1) {
 		int i;
 		for (i = 0; i < 9; ++i) {
-			Board_LED_Set(0, false);
-			vTaskDelay(configTICK_RATE_HZ / 4);
 			Board_LED_Set(0, true);
 			vTaskDelay(configTICK_RATE_HZ / SOS[i]);
+			Board_LED_Set(0, false);
+			vTaskDelay(configTICK_RATE_HZ / 4);
 		}
-		!secondary_SOS;
+		vTaskDelay(configTICK_RATE_HZ / 2);
+		secondary_SOS = !secondary_SOS;
 	}
 }
 
@@ -75,7 +76,7 @@ static void vLEDTask2(void *pvParameters) {
 	while (1) {
 		Board_LED_Set(1, secondary_SOS);
 
-		/* A delay to prevent constant writes to the pint. Don't know if this is actually important */
+		/* A delay to prevent constant writes to the pin. Don't know if this is actually important */
 		vTaskDelay(configTICK_RATE_HZ / 8);
 	}
 }
@@ -86,7 +87,6 @@ static void vUARTTask(void *pvParameters) {
 	int tickCnt = 0;
 	int minutes = 0;
 
-
 	while (1) {
 		DEBUGOUT("Tick: %02d:%02d \r\n", minutes, tickCnt);
 
@@ -96,7 +96,8 @@ static void vUARTTask(void *pvParameters) {
 		if (tickCnt > 59) {
 			tickCnt -= 60;
 			++minutes;
-			if (minutes > 59) minutes = 0;
+			if (minutes > 59)
+				minutes = 0;
 		}
 
 		/* About a 1s delay here */
@@ -111,7 +112,7 @@ static void vUARTTask(void *pvParameters) {
 /* the following is required if runtime statistics are to be collected */
 extern "C" {
 
-void vConfigureTimerForRunTimeStats( void ) {
+void vConfigureTimerForRunTimeStats(void) {
 	Chip_SCT_Init(LPC_SCTSMALL1);
 	LPC_SCTSMALL1->CONFIG = SCT_CONFIG_32BIT_COUNTER;
 	LPC_SCTSMALL1->CTRL_U = SCT_CTRL_PRE_L(255) | SCT_CTRL_CLRCTR_L; // set prescaler to 256 (255 + 1), and start timer
@@ -124,24 +125,23 @@ void vConfigureTimerForRunTimeStats( void ) {
  * @brief	main routine for FreeRTOS blinky example
  * @return	Nothing, function should not exit
  */
-int main(void)
-{
+int main(void) {
 	prvSetupHardware();
 
 	/* LED1 toggle thread */
 	xTaskCreate(vLEDTask1, "vTaskLed1",
-				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
-				(TaskHandle_t *) NULL);
+	configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
+			(TaskHandle_t*) NULL);
 
 	/* LED2 toggle thread */
 	xTaskCreate(vLEDTask2, "vTaskLed2",
-				configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
-				(TaskHandle_t *) NULL);
+	configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
+			(TaskHandle_t*) NULL);
 
 	/* UART output thread, simply counts seconds */
 	xTaskCreate(vUARTTask, "vTaskUart",
-				configMINIMAL_STACK_SIZE + 128, NULL, (tskIDLE_PRIORITY + 1UL),
-				(TaskHandle_t *) NULL);
+	configMINIMAL_STACK_SIZE + 128, NULL, (tskIDLE_PRIORITY + 1UL),
+			(TaskHandle_t*) NULL);
 
 	/* Start the scheduler */
 	vTaskStartScheduler();
