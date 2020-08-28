@@ -25,6 +25,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "heap_lock_monitor.h"
+#include "DigitalIoPin.h"
 
 /*****************************************************************************
  * Private types/enumerations/variables
@@ -81,6 +82,7 @@ static void vLEDTask2(void *pvParameters) {
 
 /* UART (or output) thread */
 static void vUARTTask(void *pvParameters) {
+	DigitalIoPin SW1(0, 17, DigitalIoPin::pullup, false);
 	int tickCnt = 0;
 	int minutes = 0;
 
@@ -88,9 +90,11 @@ static void vUARTTask(void *pvParameters) {
 	while (1) {
 		DEBUGOUT("Tick: %02d:%02d \r\n", minutes, tickCnt);
 
-		++tickCnt;
+		if(SW1.read()) tickCnt += 10;
+		else ++tickCnt;
+
 		if (tickCnt > 59) {
-			tickCnt = 0;
+			tickCnt -= 60;
 			++minutes;
 			if (minutes > 59) minutes = 0;
 		}
