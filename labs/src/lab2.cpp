@@ -34,6 +34,9 @@
 #include "Smutex.h"
 #endif
 
+#if EXER == 2
+#include "semphr.h"
+#endif
 /*****************************************************************************
  * Private types/enumerations/variables
  ****************************************************************************/
@@ -44,7 +47,9 @@
 #if EXER == 1
 Smutex guard;
 #endif
-
+#if EXER == 2
+SemaphoreHandle_t binSemphr;
+#endif
 /*****************************************************************************
  * Private functions
  ****************************************************************************/
@@ -99,9 +104,24 @@ static void vSW3Task(void *pvParameters) {
 static void vUARTecho(void *pvParameters) {
 	int c;
 	while (1) {
-		if (c = Board_UARTGetChar() != EOF) {
+		xSemaphoreTake(binSemphr, (TickType_t ) 1);
+		if ((c = Board_UARTGetChar()) != EOF) {
 			Board_UARTPutChar(c);
 			Board_UARTPutSTR("\r\n");
+			xSemaphoreGive(binSemphr);
+		}
+	}
+}
+
+static void vBlinkTask(void *pvParameters) {
+	Board_LED_Set(1, 0);
+	while (1) {
+		if (xSemaphoreTake(binSemphr, portMAX_DELAY) == pdTRUE) {
+			Board_LED_Toggle(1);
+			vTaskDelay(configTICK_RATE_HZ / 10);
+			Board_LED_Toggle(1);
+			vTaskDelay(configTICK_RATE_HZ / 10);
+			xSemaphoreGive(binSemphr);
 		}
 	}
 }
@@ -146,9 +166,16 @@ int main(void) {
 
 #endif
 #if EXER == 2
+	binSemphr = xSemaphoreCreateBinary();
+
 	xTaskCreate(vUARTecho, "vUARTecho",
 	configMINIMAL_STACK_SIZE + 200, NULL, (tskIDLE_PRIORITY + 1UL),
 			(TaskHandle_t*) NULL);
+
+	xTaskCreate(vBlinkTask, "vTaskBlink",
+	configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
+			(TaskHandle_t*) NULL);
+
 #endif
 	/* Start the scheduler */
 	vTaskStartScheduler();
