@@ -22,12 +22,17 @@
 
 // TODO: insert other definitions and declarations here
 
+#define EXER 2
+
 #include "FreeRTOS.h"
 #include "task.h"
 #include "heap_lock_monitor.h"
 #include "DigitalIoPin.h"
+
+#if EXER == 1
 #include <mutex>
 #include "Smutex.h"
+#endif
 
 /*****************************************************************************
  * Private types/enumerations/variables
@@ -36,8 +41,9 @@
 /*****************************************************************************
  * Public types/enumerations/variables
  ****************************************************************************/
-
+#if EXER == 1
 Smutex guard;
+#endif
 
 /*****************************************************************************
  * Private functions
@@ -52,6 +58,8 @@ static void prvSetupHardware(void) {
 	/* Initial LED0 state is off */
 	Board_LED_Set(0, false);
 }
+
+# if EXER == 1
 
 static void vSW1Task(void *pvParameters) {
 	DigitalIoPin SW1(0, 17, DigitalIoPin::pullup, true);
@@ -86,6 +94,19 @@ static void vSW3Task(void *pvParameters) {
 	}
 }
 
+#endif
+#if EXER == 2
+static void vUARTecho(void *pvParameters) {
+	int c;
+	while (1) {
+		if (c = Board_UARTGetChar() != EOF) {
+			Board_UARTPutChar(c);
+			Board_UARTPutSTR("\r\n");
+		}
+	}
+}
+#endif
+
 /*****************************************************************************
  * Public functions
  ****************************************************************************/
@@ -109,6 +130,8 @@ void vConfigureTimerForRunTimeStats(void) {
 int main(void) {
 	prvSetupHardware();
 
+#if EXER == 1
+
 	xTaskCreate(vSW1Task, "vTaskSW1",
 	configMINIMAL_STACK_SIZE + 300, NULL, (tskIDLE_PRIORITY + 1UL),
 			(TaskHandle_t*) NULL);
@@ -121,6 +144,12 @@ int main(void) {
 	configMINIMAL_STACK_SIZE + 300, NULL, (tskIDLE_PRIORITY + 1UL),
 			(TaskHandle_t*) NULL);
 
+#endif
+#if EXER == 2
+	xTaskCreate(vUARTecho, "vUARTecho",
+	configMINIMAL_STACK_SIZE + 200, NULL, (tskIDLE_PRIORITY + 1UL),
+			(TaskHandle_t*) NULL);
+#endif
 	/* Start the scheduler */
 	vTaskStartScheduler();
 
