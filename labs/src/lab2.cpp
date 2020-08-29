@@ -54,13 +54,37 @@ static void prvSetupHardware(void) {
 }
 
 static void vSW1Task(void *pvParameters) {
-	DigitalIoPin SW1(0,17, DigitalIoPin::pullup, true);
-	if (SW1.read()) {
-		std::lock_guard<Smutex> lock(guard);
-		Board_UARTPutSTR("SW1 pressed\r\n");
+	DigitalIoPin SW1(0, 17, DigitalIoPin::pullup, true);
+	while (1) {
+
+		if (SW1.read()) {
+			std::lock_guard<Smutex> lock(guard);
+			Board_UARTPutSTR("SW1 pressed\r\n");
+		}
 	}
 }
 
+static void vSW2Task(void *pvParameters) {
+	DigitalIoPin SW2(1, 11, DigitalIoPin::pullup, true);
+	while (1) {
+
+		if (SW2.read()) {
+			std::lock_guard<Smutex> lock(guard);
+			Board_UARTPutSTR("SW2 pressed\r\n");
+		}
+	}
+}
+
+static void vSW3Task(void *pvParameters) {
+	DigitalIoPin SW3(1, 9, DigitalIoPin::pullup, true);
+	while (1) {
+
+		if (SW3.read()) {
+			std::lock_guard<Smutex> lock(guard);
+			Board_UARTPutSTR("SW3 pressed\r\n");
+		}
+	}
+}
 
 /*****************************************************************************
  * Public functions
@@ -86,7 +110,15 @@ int main(void) {
 	prvSetupHardware();
 
 	xTaskCreate(vSW1Task, "vTaskSW1",
-	configMINIMAL_STACK_SIZE, NULL, (tskIDLE_PRIORITY + 1UL),
+	configMINIMAL_STACK_SIZE + 300, NULL, (tskIDLE_PRIORITY + 1UL),
+			(TaskHandle_t*) NULL);
+
+	xTaskCreate(vSW2Task, "vTaskSW2",
+	configMINIMAL_STACK_SIZE + 300, NULL, (tskIDLE_PRIORITY + 1UL),
+			(TaskHandle_t*) NULL);
+
+	xTaskCreate(vSW3Task, "vTaskSW3",
+	configMINIMAL_STACK_SIZE + 300, NULL, (tskIDLE_PRIORITY + 1UL),
 			(TaskHandle_t*) NULL);
 
 	/* Start the scheduler */
