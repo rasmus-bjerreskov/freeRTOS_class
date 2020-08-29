@@ -83,15 +83,19 @@ static void vLEDTask2(void *pvParameters) {
 
 /* UART (or output) thread */
 static void vUARTTask(void *pvParameters) {
-	DigitalIoPin SW1(0, 17, DigitalIoPin::pullup, false);
+	DigitalIoPin SW1(0, 17, DigitalIoPin::pullup, true);
 	int tickCnt = 0;
 	int minutes = 0;
 
 	while (1) {
 		DEBUGOUT("Tick: %02d:%02d \r\n", minutes, tickCnt);
 
-		if(SW1.read()) tickCnt += 10;
-		else ++tickCnt;
+		/* About a 1s delay here */
+		vTaskDelay(configTICK_RATE_HZ);
+		if (SW1.read())
+			tickCnt += 10;
+		else
+			++tickCnt;
 
 		if (tickCnt > 59) {
 			tickCnt -= 60;
@@ -99,9 +103,6 @@ static void vUARTTask(void *pvParameters) {
 			if (minutes > 59)
 				minutes = 0;
 		}
-
-		/* About a 1s delay here */
-		vTaskDelay(configTICK_RATE_HZ);
 	}
 }
 
