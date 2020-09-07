@@ -62,7 +62,6 @@ static void vTaskProduce(void *pvParameters) {
 	int c = EOF;
 	const int max_len = 255;
 	int len = 0;
-	char cBuf[max_len];
 
 	while (1) {
 		while (c != '\r' && c != '\n' && len < max_len) {
@@ -70,7 +69,6 @@ static void vTaskProduce(void *pvParameters) {
 				xSemaphoreTake(mutex, portMAX_DELAY);
 				Board_UARTPutChar(c);
 				xSemaphoreGive(mutex);
-				cBuf[len] = c;
 				len++;
 			}
 			xSemaphoreTake(mutex, portMAX_DELAY); //reverse order so \r doesn't go on the array
@@ -78,6 +76,9 @@ static void vTaskProduce(void *pvParameters) {
 			xSemaphoreGive(mutex);
 		}
 		if (xIntQueue != NULL) {
+			xSemaphoreTake(mutex, portMAX_DELAY);
+			Board_UARTPutSTR("\r\n");
+			xSemaphoreGive(mutex);
 			xQueueSend(xIntQueue, &len, portMAX_DELAY);
 			len = 0;
 			c = EOF;
@@ -114,9 +115,10 @@ static void vTaskConsume(void *pvParameters) {
 				if (buffer != -1) {
 					count += buffer;
 				} else {
-					xSemaphoreTake(mutex, portMAX_DELAY);
 					sprintf(str, "You have typed %d characters\r\n", count);
+					xSemaphoreTake(mutex, portMAX_DELAY);
 					Board_UARTPutSTR(str);
+					xSemaphoreGive(mutex);
 					count = 0;
 				}
 			}
