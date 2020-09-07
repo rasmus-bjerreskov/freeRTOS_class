@@ -19,7 +19,7 @@
 #include <cr_section_macros.h>
 
 // TODO: insert other include files here
-
+#define EXER 2
 // TODO: insert other definitions and declarations here
 
 #include "FreeRTOS.h"
@@ -29,6 +29,8 @@
 #include "heap_lock_monitor.h"
 #include "DigitalIoPin.h"
 
+#include <stdlib.h>
+#include <time.h>
 /*****************************************************************************
  * Private types/enumerations/variables
  ****************************************************************************/
@@ -57,7 +59,7 @@ static void prvSetupHardware(void) {
 /*****************************************************************************
  * Public functions
  ****************************************************************************/
-
+#if EXER == 1
 static void vTaskProduce(void *pvParameters) {
 	int c = EOF;
 	const int max_len = 255;
@@ -71,7 +73,7 @@ static void vTaskProduce(void *pvParameters) {
 				xSemaphoreGive(mutex);
 				len++;
 			}
-			xSemaphoreTake(mutex, portMAX_DELAY); //reverse order so \r doesn't go on the array
+			xSemaphoreTake(mutex, portMAX_DELAY); //reverse order so \r doesn't go on the queue
 			c = Board_UARTGetChar();
 			xSemaphoreGive(mutex);
 		}
@@ -125,36 +127,101 @@ static void vTaskConsume(void *pvParameters) {
 		}
 	}
 }
+#endif
 
-/* the following is required if runtime statistics are to be collected */
-extern "C" {
-
-void vConfigureTimerForRunTimeStats(void) {
-	Chip_SCT_Init(LPC_SCTSMALL1);
-	LPC_SCTSMALL1->CONFIG = SCT_CONFIG_32BIT_COUNTER;
-	LPC_SCTSMALL1->CTRL_U = SCT_CTRL_PRE_L(255) | SCT_CTRL_CLRCTR_L; // set prescaler to 256 (255 + 1), and start timer
+#if EXER == 2
+static void vTaskProduce(void *pvParameters) {
+	int delay;
+	while (1) {
+		delay = rand() % 400 + 101;
+		vTaskDelay(delay);
+		if (xIntQueue != NULL) {
+			xQueueSend(xIntQueue, &delay, portMAX_DELAY);
+		}
+	}
 }
 
-}
-/* end runtime statictics collection */
+static void vTaskTrigger(void *pvParameters) {
+	DigitalIoPin SW1(0, 17, DigitalIoPin::pullup, true);
+	bool pressed = false;
+	const int emergency = 112;
 
-/**
- * @brief	main routine for FreeRTOS blinky example
- * @return	Nothing, function should not exit
- */
+	while (1) {
+		if (!pressed && SW1.read()) {
+			xSemaphoreTake(mutex, portMAX_DELAY);
+			Board_UARTPutSTR("Debug\r\n");
+			xSemaphoreGive(mutex);
+			pressed = true;
+
+			if (xIntQueue != NULL)
+				xQueueSendToBack(xIntQueue, &emergency, portMAX_DELAY);
+		}
+
+		if (pressed && !SW1.read())
+			pressed = false;
+	}
+}
+
+static void vTaskConsume(void *pvParameters) {
+	mutex = xSemaphoreCreateMutex();
+	xIntQueue = xQueueCreate(20, sizeof(int));
+	srand(time(0));
+
+	char str[30];
+	int buffer = 0;
+
+	while (1) {
+		if (xIntQueue != NULL) {
+			if (xQueueReceive(xIntQueue, &buffer, portMAX_DELAY) == pdTRUE) {
+				if (buffer == 112) {
+					sprintf(str, "%d\r\nHelp me!\r\n", buffer);
+					xSemaphoreTake(mutex, portMAX_DELAY);
+					Board_UARTPutSTR(str);
+					xSemaphoreGive(mutex);
+					vTaskDelay(800);
+				} else {
+					sprintf(str, "%d\r\n", buffer);
+
+					xSemaphoreTake(mutex, portMAX_DELAY);
+					Board_UARTPutSTR(str);
+					xSemaphoreGive(mutex);
+				}
+			}
+		}
+	}
+}
+
+#endif
+
+	/* the following is required if runtime statistics are to be collected */
+	extern "C" {
+
+	void vConfigureTimerForRunTimeStats(void) {
+		Chip_SCT_Init(LPC_SCTSMALL1);
+		LPC_SCTSMALL1->CONFIG = SCT_CONFIG_32BIT_COUNTER;
+		LPC_SCTSMALL1->CTRL_U = SCT_CTRL_PRE_L(255) | SCT_CTRL_CLRCTR_L; // set prescaler to 256 (255 + 1), and start timer
+	}
+
+	}
+	/* end runtime statictics collection */
+
+	/**
+	 * @brief	main routine for FreeRTOS blinky example
+	 * @return	Nothing, function should not exit
+	 */
 int main(void) {
 	prvSetupHardware();
 
 	xTaskCreate(vTaskProduce, "vProducerTask",
-	configMINIMAL_STACK_SIZE + 128, NULL, (tskIDLE_PRIORITY + 1UL),
+			configMINIMAL_STACK_SIZE + 128, NULL, (tskIDLE_PRIORITY + 1UL),
 			(TaskHandle_t*) NULL);
 
 	xTaskCreate(vTaskTrigger, "vTriggerTask",
-	configMINIMAL_STACK_SIZE + 128, NULL, (tskIDLE_PRIORITY + 1UL),
+			configMINIMAL_STACK_SIZE + 128, NULL, (tskIDLE_PRIORITY + 1UL),
 			(TaskHandle_t*) NULL);
 
 	xTaskCreate(vTaskConsume, "vConsumerTask",
-	configMINIMAL_STACK_SIZE + 128, NULL, (tskIDLE_PRIORITY + 2UL),
+			configMINIMAL_STACK_SIZE + 128, NULL, (tskIDLE_PRIORITY + 2UL),
 			(TaskHandle_t*) NULL);
 
 	/* Start the scheduler */
