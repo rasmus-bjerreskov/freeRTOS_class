@@ -48,6 +48,7 @@ tasks.c:4038:13:xTaskPriorityDisinherit	24	static
 tasks.c:4118:7:vTaskPriorityDisinheritAfterTimeout	32	static
 tasks.c:4283:15:prvWriteNameToBuffer	24	static
 tasks.c:4309:7:vTaskList	48	static
+tasks.c:4408:7:vTaskGetRunTimeStats	40	static
 tasks.c:4533:12:uxTaskResetEventItemValue	16	static
 tasks.c:4549:15:pvTaskIncrementMutexHeldCount	4	static
 tasks.c:4566:11:ulTaskNotifyTake	24	static

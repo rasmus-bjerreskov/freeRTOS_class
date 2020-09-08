@@ -148,9 +148,9 @@ static void vTaskTrigger(void *pvParameters) {
 
 	while (1) {
 		if (!pressed && SW1.read()) {
-			xSemaphoreTake(mutex, portMAX_DELAY);
+/*			xSemaphoreTake(mutex, portMAX_DELAY);
 			Board_UARTPutSTR("Debug\r\n");
-			xSemaphoreGive(mutex);
+			xSemaphoreGive(mutex);*/
 			pressed = true;
 
 			if (xIntQueue != NULL)
