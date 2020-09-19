@@ -28,7 +28,7 @@
 
 // TODO: insert other definitions and declarations here
 
-#define EXER 	3
+#define EXER 	1
 
 #define RIGHT 	0
 #define LEFT 	1
@@ -184,10 +184,9 @@ static void vTask2(void *pvParameters) {
 			else if (button3)
 				dir->write(RIGHT);
 			if (!lLim && !rLim) {
-
+				one_step();
 			}
 		}
-		one_step();
 	}
 
 
