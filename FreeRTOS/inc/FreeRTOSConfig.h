@@ -43,7 +43,7 @@
  * FreeRTOS API DOCUMENTATION AVAILABLE ON THE FreeRTOS.org WEB SITE.
  *----------------------------------------------------------*/
 
-    
+#define configFRTOS_MEMORY_SCHEME 	3
 #define configUSE_PREEMPTION		1
 #define configUSE_IDLE_HOOK			0
 #define configMAX_PRIORITIES		( 8 )
@@ -96,7 +96,7 @@ to exclude the API function. */
  * - Extremely accurate timing using CPU core for short time statistics
  * - Slightly less accurate timing using LPC timers for collecting stats over extended time periods
  */
-#if 1
+#if 0
 /* This enables processor core cycle counter for runtime statistics
  * Internal cycle counter gives very accurate results but overflows in couple of minutes */
 #define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS()    (CoreDebug->DEMCR |= 1 << 24, DWT->CTRL |= 1)

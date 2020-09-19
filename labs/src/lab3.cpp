@@ -19,7 +19,7 @@
 #include <cr_section_macros.h>
 
 // TODO: insert other include files here
-#define EXER 2
+#define EXER 1
 // TODO: insert other definitions and declarations here
 
 #include "FreeRTOS.h"

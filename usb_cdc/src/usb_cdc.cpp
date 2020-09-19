@@ -1,12 +1,12 @@
 /*
-===============================================================================
+ ===============================================================================
  Name        : main.c
  Author      : $(author)
  Version     :
  Copyright   : $(copyright)
  Description : main definition
-===============================================================================
-*/
+ ===============================================================================
+ */
 
 #if defined (__USE_LPCOPEN)
 #if defined(NO_BOARD_LIB)
@@ -30,11 +30,10 @@
 
 // TODO: insert other definitions and declarations here
 
-
 /* the following is required if runtime statistics are to be collected */
 extern "C" {
 
-void vConfigureTimerForRunTimeStats( void ) {
+void vConfigureTimerForRunTimeStats(void) {
 	Chip_SCT_Init(LPC_SCTSMALL1);
 	LPC_SCTSMALL1->CONFIG = SCT_CONFIG_32BIT_COUNTER;
 	LPC_SCTSMALL1->CTRL_U = SCT_CTRL_PRE_L(255) | SCT_CTRL_CLRCTR_L; // set prescaler to 256 (255 + 1), and start timer
@@ -44,11 +43,10 @@ void vConfigureTimerForRunTimeStats( void ) {
 /* end runtime statictics collection */
 
 /* Sets up system hardware */
-static void prvSetupHardware(void)
-{
+static void prvSetupHardware(void) {
 	SystemCoreClockUpdate();
 	Board_Init();
-	
+
 	heap_monitor_setup();
 	/* Initial LED0 state is off */
 	Board_LED_Set(0, false);
@@ -59,13 +57,15 @@ static void prvSetupHardware(void)
 static void send_task(void *pvParameters) {
 	bool LedState = false;
 	uint32_t count = 0;
+	int len = 6;
 
 	vTaskDelay(100); /* wait until semaphores are created */
 
 	while (1) {
-		char str[32];
-		int len = sprintf(str, "Counter: %lu runs really fast\r\n", count);
-		USB_send((uint8_t *)str, len);
+		//char str[32];
+
+		//sprintf(str, "Counter: %lu runs really fast\r\n", count);
+		USB_send((uint8_t*)"Test\r\n", len);
 		Board_LED_Set(0, LedState);
 		LedState = (bool) !LedState;
 		count++;
@@ -73,7 +73,6 @@ static void send_task(void *pvParameters) {
 		vTaskDelay(configTICK_RATE_HZ / 50);
 	}
 }
-
 
 /* LED1 toggle thread */
 static void receive_task(void *pvParameters) {
@@ -83,7 +82,7 @@ static void receive_task(void *pvParameters) {
 
 	while (1) {
 		char str[80];
-		uint32_t len = USB_receive((uint8_t *)str, 79);
+		uint32_t len = USB_receive((uint8_t*) str, 79);
 		str[len] = 0; /* make sure we have a zero at the end so that we can print the data */
 		ITM_write(str);
 
@@ -92,7 +91,6 @@ static void receive_task(void *pvParameters) {
 	}
 }
 
-
 int main(void) {
 
 	prvSetupHardware();
@@ -100,19 +98,18 @@ int main(void) {
 
 	/* LED1 toggle thread */
 	xTaskCreate(send_task, "Tx",
-				configMINIMAL_STACK_SIZE * 3, NULL, (tskIDLE_PRIORITY + 1UL),
-				(TaskHandle_t *) NULL);
+	50, NULL, (tskIDLE_PRIORITY + 1UL),
+			(TaskHandle_t*) NULL);
 
 	/* LED1 toggle thread */
 	xTaskCreate(receive_task, "Rx",
-				configMINIMAL_STACK_SIZE * 3, NULL, (tskIDLE_PRIORITY + 1UL),
-				(TaskHandle_t *) NULL);
+	76, NULL, (tskIDLE_PRIORITY + 1UL),
+			(TaskHandle_t*) NULL);
 
 	/* LED2 toggle thread */
 	xTaskCreate(cdc_task, "CDC",
-				configMINIMAL_STACK_SIZE * 3, NULL, (tskIDLE_PRIORITY + 1UL),
-				(TaskHandle_t *) NULL);
-
+	94, NULL, (tskIDLE_PRIORITY + 1UL),
+			(TaskHandle_t*) NULL);
 
 	/* Start the scheduler */
 	vTaskStartScheduler();
