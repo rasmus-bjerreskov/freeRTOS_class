@@ -66,10 +66,7 @@ void vConfigureTimerForRunTimeStats(void) {
 }
 /* end runtime statictics collection */
 
-/**
- * @brief	main routine for FreeRTOS blinky example
- * @return	Nothing, function should not exit
- */
+
 int main(void) {
 	prvSetupHardware();
 

@@ -62,7 +62,6 @@ static void send_task(void *pvParameters) {
 	vTaskDelay(100); /* wait until semaphores are created */
 
 	while (1) {
-		//char str[32];
 
 		//sprintf(str, "Counter: %lu runs really fast\r\n", count);
 		USB_send((uint8_t*)"Test\r\n", len);
