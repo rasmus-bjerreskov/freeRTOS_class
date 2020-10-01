@@ -22,6 +22,8 @@
 
 // TODO: insert other definitions and declarations here
 
+#define EXER 3
+
 #include <cstring>
 #include <cstdlib>
 
@@ -34,7 +36,6 @@
 #include "ITM_write.h"
 #include "LpcUart.h"
 
-#define EXER 3
 /*****************************************************************************
  * Private types/enumerations/variables
  ****************************************************************************/
@@ -179,26 +180,31 @@ void pinIntSetup() {
 	Chip_INMUX_PinIntSel(0, SW1_port, SW1_pin); //write port-pin value to INTPIN bits in PINTSEL0-2 cf t. 131
 	Chip_INMUX_PinIntSel(1, SW2_port, SW2_pin);
 	Chip_INMUX_PinIntSel(2, SW3_port, SW3_pin);
-	Chip_INMUX_PinIntSel(3, SW3_port, SW3_pin); //fourth interrupt needed for exercise 3
 
 	uint32_t pinChannels = PININTCH(0) | PININTCH(1) | PININTCH(2);
 
 	Chip_PININT_ClearIntStatus(LPC_GPIO_PIN_INT, pinChannels); //setting interrupt config to a known state
-	Chip_PININT_ClearIntStatus(LPC_GPIO_PIN_INT, PININTCH(3));
 	Chip_PININT_SetPinModeEdge(LPC_GPIO_PIN_INT, pinChannels); //set ISEL bits to 0 for level sensitive cf t. 153
-	Chip_PININT_SetPinModeEdge(LPC_GPIO_PIN_INT, PININTCH(3));
 	Chip_PININT_EnableIntLow(LPC_GPIO_PIN_INT, pinChannels); //falling edge sensitive, cf t. 158
-	Chip_PININT_EnableIntHigh(LPC_GPIO_PIN_INT, PININTCH(3)); //rising edge sensitive cf t. 155
 
 	NVIC_ClearPendingIRQ(PIN_INT0_IRQn); //finally, enabling interrupts in NVIC
 	NVIC_ClearPendingIRQ(PIN_INT1_IRQn);
 	NVIC_ClearPendingIRQ(PIN_INT2_IRQn);
-	NVIC_ClearPendingIRQ(PIN_INT3_IRQn);
 
 	NVIC_EnableIRQ(PIN_INT0_IRQn);
 	NVIC_EnableIRQ(PIN_INT1_IRQn);
 	NVIC_EnableIRQ(PIN_INT2_IRQn);
+
+#if EXER == 3
+	Chip_INMUX_PinIntSel(3, SW3_port, SW3_pin); //fourth interrupt needed for exercise 3
+
+	Chip_PININT_ClearIntStatus(LPC_GPIO_PIN_INT, PININTCH(3));
+	Chip_PININT_SetPinModeEdge(LPC_GPIO_PIN_INT, PININTCH(3));
+	Chip_PININT_EnableIntHigh(LPC_GPIO_PIN_INT, PININTCH(3)); //rising edge sensitive cf t. 155
+
+	NVIC_ClearPendingIRQ(PIN_INT3_IRQn);
 	NVIC_EnableIRQ(PIN_INT3_IRQn);
+#endif
 }
 
 /* the following is required if runtime statistics are to be collected */
@@ -232,7 +238,6 @@ void vTask1(void *pvParamters) {
 	vTaskDelay(100);
 	while (1) {
 		xQueueReceive(cntQ, &curSw, portMAX_DELAY);
-
 
 		if (prevSw && curSw != prevSw) { //check that this is not the first button pressed and not the same as last press
 			sprintf(str, "\nButton %d pressed %d times.\n", prevSw, presses);
@@ -369,23 +374,26 @@ void vTask1(void *pvParameters) {
 					if (input == code) {
 						led_t tmp = green;
 						xQueueSend(ledQ, &tmp, portMAX_DELAY);
+						input = 0; //clear input, otherwise certain patterns may reappear before full code entered
 					}
 
-				} else if (tbuf.sw_n == 4) {
+				} else if (tbuf.sw_n == 4) { //send blue led request,
 					state = sw3Held;
 					sw3_start = tbuf.time;
+					led_t tmp = blue;
+					xQueueSend(ledQ, &tmp, portMAX_DELAY);
 				}
 
 			} else if (state == sw3Held) { //state: sw3 currently held
 				if (tbuf.sw_n == 3) { //all other input should be ignored while sw3 held
-					if (tbuf.time - sw3_start < 3000) //button released too soon
+					if (tbuf.time - sw3_start < 3000) { //button released too soon
+						led_t tmp = red;
+						xQueueSend(ledQ, &tmp, portMAX_DELAY); //abort led request
 						state = read;
-				} else if (tbuf.time - sw3_start >= 3000) {
-					state = config;
-					ITM_write("\nEnter new code\n");
-					led_t tmp = blue;
-					xQueueSend(ledQ, &tmp, portMAX_DELAY);
-
+					} else {
+						state = config;
+						ITM_write("\nEnter new code\n");
+					}
 				}
 			} else if (state == config) { //state: setting new code
 				if (tbuf.sw_n == 1 || tbuf.sw_n == 2) {
@@ -410,17 +418,22 @@ void vTask2(void *pvParameters) { //second task for managing led timers. Maybe o
 	ledQ = xQueueCreate(1, sizeof(int));
 
 	const TickType_t greenT = 5000;
-	led_t led = red;
+	const TickType_t blueT = 3000;
+	led_t led_rq = red;
+	led_t led_out = red;
 	TickType_t prevT;
 	while (1) {
-		if (xQueueReceive(ledQ, &led, 0) == pdTRUE) {
-			if (led == green)
+		if (xQueueReceive(ledQ, &led_rq, 0) == pdTRUE) {
+			if (led_rq != red)	//red is default state
 				prevT = xTaskGetTickCount();
 		}
-		if (led == green && xTaskGetTickCount() - prevT >= greenT)
-			led = red;
 
-		switch (led) {
+		led_out = led_rq;
+		if (led_rq == green && xTaskGetTickCount() - prevT >= greenT) //switch off green after delay
+			led_out = red;
+		else if (led_rq == blue && xTaskGetTickCount() - prevT < blueT) //only switch on blue after a delay
+			led_out = red;
+		switch (led_out) {
 		case red:
 			Board_LED_Set(0, true);
 			Board_LED_Set(1, false);
@@ -451,7 +464,7 @@ int main(void) {
 
 #if EXER == 2
 	xTaskCreate(vTask2, "readTask", configMINIMAL_STACK_SIZE * 3, NULL,
-	tskIDLE_PRIORITY + 3UL, NULL);
+			tskIDLE_PRIORITY + 3UL, NULL);
 #endif
 
 #if EXER == 3
