@@ -245,7 +245,7 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry excluding="lab7.cpp|usb_cdc.cpp|lab6.cpp|ValloxComm.cpp|lab5.cpp|lab3.cpp|uart_test.cpp|lab2.cpp|lab1.cpp|template.cpp" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
+						<entry excluding="lab8.cpp|usb_cdc.cpp|lab6.cpp|ValloxComm.cpp|lab5.cpp|lab3.cpp|uart_test.cpp|lab2.cpp|lab1.cpp|template.cpp" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
@@ -493,7 +493,7 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry excluding="lab7.cpp|usb_cdc.cpp|lab6.cpp|ValloxComm.cpp|lab5.cpp|lab3.cpp|uart_test.cpp|lab2.cpp|lab1.cpp|template.cpp" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
+						<entry excluding="lab8.cpp|usb_cdc.cpp|lab6.cpp|ValloxComm.cpp|lab5.cpp|lab3.cpp|uart_test.cpp|lab2.cpp|lab1.cpp|template.cpp" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
