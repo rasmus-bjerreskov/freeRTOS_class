@@ -1,0 +1,12 @@
+"FreeRTOS Task Aware Debugger for GDB" version 11.2.0 (202001021529)
+(c) 2016-2018 NXP Semiconductors, Inc.
+==================================
+16:51:06.562 INFO: [TadModel] DSF session ID 6 has started.
+16:51:10.222 INFO: [TadState] TAD state changed:  DEBUG_STARTED -> DEBUG_INIT_0 (SUSPENDED, USER_REQUEST)
+16:51:11.359 INFO: [TadState] TAD state changed:  DEBUG_INIT_0 -> DEBUG_INIT_1 (RESUMED, USER_REQUEST)
+16:51:11.479 INFO: [TadState] TAD state changed:  DEBUG_INIT_1 -> DEBUG_SUSPENDED (SUSPENDED, BREAKPOINT)
+16:51:17.88 INFO: [TadState] TAD state changed:  DEBUG_SUSPENDED -> DEBUG_RESUMED (RESUMED, USER_REQUEST)
+16:51:45.515 INFO: [TadState] TAD state changed:  DEBUG_RESUMED -> READY (SUSPENDED, SIGNAL)
+16:51:46.517 INFO: [FreeRTOS] FreeRTOS has not been detected.
+16:51:46.603 ERROR: [VariableReader] Could not read variable expression: "sizeof(pxReadyTasksLists)".
+16:51:46.627 INFO: [TadModel] DSF session ID 6 has ended.

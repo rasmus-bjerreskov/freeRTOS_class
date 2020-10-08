@@ -1,0 +1,24 @@
+"FreeRTOS Task Aware Debugger for GDB" version 11.2.0 (202001021529)
+(c) 2016-2018 NXP Semiconductors, Inc.
+==================================
+16:47:49.96 INFO: [TadModel] DSF session ID 4 has started.
+16:47:55.140 INFO: [TadState] TAD state changed:  DEBUG_STARTED -> DEBUG_INIT_0 (SUSPENDED, USER_REQUEST)
+16:47:55.778 INFO: [TadState] TAD state changed:  DEBUG_INIT_0 -> DEBUG_INIT_1 (RESUMED, USER_REQUEST)
+16:47:55.942 INFO: [TadState] TAD state changed:  DEBUG_INIT_1 -> DEBUG_SUSPENDED (SUSPENDED, BREAKPOINT)
+16:48:04.297 INFO: [TadState] TAD state changed:  DEBUG_SUSPENDED -> DEBUG_RESUMED (RESUMED, USER_REQUEST)
+16:48:20.66 INFO: [TadState] TAD state changed:  DEBUG_RESUMED -> READY (SUSPENDED, SIGNAL)
+16:48:20.398 INFO: [Benchmark] Loading data for "Determine FreeRTOS version" has started.
+16:48:20.469 INFO: [TadModel] Heap type (memory allocation scheme) has been identified from FreeRTOSDebugConfig structure as Heap #3. 
+16:48:20.469 INFO: [TadModel] FreeRTOS version has been identified from FreeRTOSDebugConfig structure as 10.2.0.
+16:48:20.470 INFO: [Benchmark] Loading data for "Determine FreeRTOS version" took 71 ms.
+16:48:20.470 INFO: [Benchmark] Loading data for "Task List" has started.
+16:48:22.84 INFO: [TadModel] DSF session ID 4 has ended.
+16:48:24.838 ERROR: [MemoryReader] Read bytes method timed out!
+16:48:24.839 EXCEPTION: [TadModel] NullPointerException while "Task List" data load.
+	com.nxp.mcuxpresso.freertos.gdb.tad.model.readers.VariableReader.readVariable(VariableReader.java:214)
+	com.nxp.mcuxpresso.freertos.gdb.tad.model.readers.VariableReader.getValueAtAddress(VariableReader.java:136)
+	com.nxp.mcuxpresso.freertos.gdb.tad.controller.TadFactory.readIntAtAddress(TadFactory.java:212)
+	com.nxp.mcuxpresso.freertos.gdb.tad.controller.tasklist.TaskFactory.readTasksFromList(TaskFactory.java:197)
+	com.nxp.mcuxpresso.freertos.gdb.tad.controller.tasklist.TaskFactory.getData(TaskFactory.java:142)
+	com.nxp.mcuxpresso.freertos.gdb.tad.model.TadModel$2.execute(TadModel.java:218)
+	com.nxp.mcuxpresso.freertos.gdb.tad.model.TadModel$3.run(TadModel.java:414)

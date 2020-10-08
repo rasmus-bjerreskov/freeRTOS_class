@@ -217,7 +217,7 @@ static void vTask1(void *pvParameters) {
 	LPC_SCTLARGE0->EVENT[1].STATE = 0xFFFFFFFF; // event 1 happens in all states
 	LPC_SCTLARGE0->EVENT[1].CTRL = (1 << 0) | (1 << 12); // match 1 condition only
 
-	Chip_SWM_MovablePinAssign(SWM_SCT0_OUT0_O, portPinVal(0, 10)); //assign blue led as output cf 114
+	Chip_SWM_MovablePinAssign(SWM_SCT0_OUT0_O, portPinVal(0, 10)); //assign servo motor as output cf 114
 
 	LPC_SCTLARGE0->OUT[0].SET = (1 << 0); // event 0 will set SCT0_OUT0 - cf 231
 	LPC_SCTLARGE0->OUT[0].CLR = (1 << 1); // event 1 will clear SCT0_OUT0 - cf 230
