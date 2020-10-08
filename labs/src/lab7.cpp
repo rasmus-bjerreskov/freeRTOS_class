@@ -22,7 +22,7 @@
 
 // TODO: insert other definitions and declarations here
 
-#define EXER 3
+#define EXER 2
 
 #include <cstring>
 #include <cstdlib>
@@ -233,10 +233,7 @@ static void vTask1(void *pvParameters) {
 		SW3 = sw3->read();
 
 		if (SW2) { //if multiple buttons held, resetting takes priority
-			if (duty > SERVO_MID) //approach middle value
-				duty--;
-			else if (duty < SERVO_MID)
-				duty++;
+			duty = SERVO_MID;
 		}
 		else if (SW1)
 			duty--;
