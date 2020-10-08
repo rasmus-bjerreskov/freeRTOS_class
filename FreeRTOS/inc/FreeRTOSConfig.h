@@ -70,7 +70,7 @@
 #define configGENERATE_RUN_TIME_STATS	1
 #define configUSE_MALLOC_FAILED_HOOK	1
     
-#define configUSE_TIMERS                1
+#define configUSE_TIMERS                0
 #define configUSE_NEWLIB_REENTRANT      1
 
 #define configINCLUDE_FREERTOS_TASK_C_ADDITIONS_H 1
