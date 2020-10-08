@@ -249,7 +249,7 @@ void vTask4(void *param) {
 
 #elif EXER == 2
 
-uint32_t Tbits = T1_BIT | T2_BIT | T3_BIT;
+const uint32_t Tbits = T1_BIT | T2_BIT | T3_BIT;
 
 void vTask1(void *param) {
 	general_setup();
@@ -308,7 +308,7 @@ void vTask3(void *param) {
 }
 #elif EXER == 3
 
-uint32_t Tbits = T1_BIT | T2_BIT | T3_BIT | T4_BIT;
+const uint32_t Tbits = T1_BIT | T2_BIT | T3_BIT | T4_BIT;
 
 void vTask1(void *param) {
 	xEventGroupSync(eGrp, T1_BIT, Tbits, portMAX_DELAY);
@@ -348,7 +348,7 @@ void vTask4(void *param) {
 	xEventGroupSync(eGrp, T4_BIT, Tbits, portMAX_DELAY); //Sync task start
 	while (1) {
 		taskBits = xEventGroupSync(eGrp, T4_BIT, Tbits,
-		configTICK_RATE_HZ * 5); //sync button press
+		configTICK_RATE_HZ * 30); //sync button press
 		time = xTaskGetTickCount();
 
 		if (taskBits == Tbits) {
