@@ -22,7 +22,7 @@
 
 // TODO: insert other definitions and declarations here
 
-#define EXER 1
+#define EXER 3
 
 #define STR_SIZE 20
 #define SBF 80 //switch bounce filter
@@ -64,7 +64,6 @@ SemaphoreHandle_t binSw1;
 SemaphoreHandle_t binSw2;
 SemaphoreHandle_t binSw3;
 
-
 /*****************************************************************************
  * Private functions
  ****************************************************************************/
@@ -85,7 +84,6 @@ void general_setup() {
 	binSw1 = xSemaphoreCreateBinary();
 	binSw2 = xSemaphoreCreateBinary();
 	binSw3 = xSemaphoreCreateBinary();
-	printQ = xQueueCreate(2, sizeof(char[STR_SIZE]));
 
 	ITM_init();
 
@@ -190,38 +188,114 @@ void PIN_INT2_IRQHandler(void) {
 }
 
 #if EXER == 1
-uint32_t tbits = T1_BIT | T2_BIT;
+const uint32_t tbits = T1_BIT | T2_BIT;
 TimerHandle_t osTimer;
 TimerHandle_t reTimer;
+SemaphoreHandle_t binOSt;
 
-void timerCallback(TimerHandle_t timer){
-
+void timerCallback(TimerHandle_t xTimer) {
+	int id = (int) pvTimerGetTimerID(xTimer);
+	if (id == 0)
+		xSemaphoreGive(binOSt);
+	else
+		xQueueSend(printQ, "hello\r\n", portMAX_DELAY);
 }
 
-void vTask1(void* param){
+void vTask1(void *param) {
 	general_setup();
+	printQ = xQueueCreate(4, sizeof(char[STR_SIZE]));
+	binOSt = xSemaphoreCreateBinary();
 
-	osTimer = xTimerCreate("osTimer", configTICK_RATE_HZ * 20, pdFALSE, (void*) 0, timerCallback);
-	reTimer = xTimerCreate("reTimer", configTICK_RATE_HZ * 5, pdTRUE, (void*) 1, timerCallback);
+	osTimer = xTimerCreate("1-shotTimer", configTICK_RATE_HZ * 20, pdFALSE,
+			(void*) 0, timerCallback);
+	reTimer = xTimerCreate("reTimer", configTICK_RATE_HZ * 5, pdTRUE, (void*) 1,
+			timerCallback);
 
 	char str[STR_SIZE] = "";
 
 	xEventGroupSync(eGrp, T1_BIT, tbits, portMAX_DELAY);
-	while(1){
+	uart->write("starting\r\n");
+	xTimerStart(osTimer, portMAX_DELAY);
+	xTimerStart(reTimer, portMAX_DELAY);
+	while (1) {
 		xQueueReceive(printQ, &str, portMAX_DELAY);
 
-		uart->write(str, STR_SIZE - 1);
+		uart->write(str);
 	}
 }
 
-void vTask2(void* param){
+void vTask2(void *param) {
 	xEventGroupSync(eGrp, T2_BIT, tbits, portMAX_DELAY);
 
-	while(1){
+	while (1) {
+		xSemaphoreTake(binOSt, portMAX_DELAY);
 		xQueueSend(printQ, "aargh\r\n", portMAX_DELAY);
 	}
 }
 
+#elif EXER == 2
+TimerHandle_t osTimer;
+
+void timerCallback(TimerHandle_t xTimer) {
+	Board_LED_Set(1, false);
+}
+
+void vTask1(void *param) {
+	general_setup();
+	osTimer = xTimerCreate("1-shotTimer", configTICK_RATE_HZ * 5, pdFALSE,
+			(void*) 0, timerCallback);
+
+	while (1) {
+		xSemaphoreTake(binAnySw, portMAX_DELAY);
+		xTimerStart(osTimer, portMAX_DELAY); //start or reset duration of timer
+		//xTimerStart is equal to xTimerReset for timers that are already active
+		Board_LED_Set(1, true);
+	}
+}
+#elif EXER == 3
+const uint32_t timeoutBit = 1 << 0;
+TimerHandle_t timeout;
+
+void timerCallback(TimerHandle_t xTimer) {
+	xEventGroupClearBits(eGrp, timeoutBit);
+}
+
+void vTask1(void *param) {
+	general_setup();
+	xEventGroupSetBits(eGrp, timeoutBit);
+	timeout = xTimerCreate("Rx timeout", configTICK_RATE_HZ * 30, pdFALSE,
+			(void*) 0, timerCallback);
+
+	char str[STR_SIZE];
+	char c;
+	int i;
+
+	uart->write("Ready\r\n");
+	while (1) {
+		i = 0;
+		c = 0;
+		/*receive single character until linefeed*/
+		while ((c != '\n' && c != '\r') && i < STR_SIZE - 1) {
+			if (xEventGroupGetBits(eGrp) & timeoutBit) {
+				//no timeout from timerCallback
+				if (uart->read(&c, 1, portMAX_DELAY)) {
+					str[i] = c;
+					i++;
+					uart->write(c);
+					xEventGroupSetBits(eGrp, timeoutBit);
+					xTimerStart(timeout, 0);
+				}
+			} else { //timeout. Reset input buffer
+				i = 0;
+				uart->write("[Inactive]\r\n");
+				xEventGroupSetBits(eGrp, timeoutBit);
+			}
+		}
+		ITM_write("string received\n");
+		uart->write("\r\n");
+		str[i] = '\0';
+	}
+}
 #endif
 
 int main(void) {
@@ -229,8 +303,16 @@ int main(void) {
 
 	eGrp = xEventGroupCreate();
 #if EXER == 1
-	xTaskCreate(vTask1, "waitQ", configMINIMAL_STACK_SIZE * 3, NULL, tskIDLE_PRIORITY + 1UL, NULL);
-	xTaskCreate(vTask2, "waitBin", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1UL, NULL);
+	xTaskCreate(vTask1, "waitQ", configMINIMAL_STACK_SIZE * 3, NULL,
+	tskIDLE_PRIORITY + 1UL, NULL);
+	xTaskCreate(vTask2, "waitBin", configMINIMAL_STACK_SIZE, NULL,
+	tskIDLE_PRIORITY + 1UL, NULL);
+#elif EXER == 2
+	xTaskCreate(vTask1, "task1", configMINIMAL_STACK_SIZE * 3, NULL,
+	tskIDLE_PRIORITY + 1UL, NULL);
+#elif EXER == 3
+	xTaskCreate(vTask1, "task1", configMINIMAL_STACK_SIZE * 3, NULL,
+	tskIDLE_PRIORITY + 1UL, NULL);
 #endif
 
 	/* Start the scheduler */
