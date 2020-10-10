@@ -31,6 +31,9 @@
 #define T3_BIT 1 << 3
 #define T4_BIT 1 << 4
 
+#include <cstdlib>
+#include <cstring>
+
 #include "FreeRTOS.h"
 #include "task.h"
 #include "queue.h"
@@ -255,22 +258,39 @@ void vTask1(void *param) {
 #elif EXER == 3
 const uint32_t timeoutBit = 1 << 0;
 TimerHandle_t timeout;
+TimerHandle_t ledTimer;
 
-void timerCallback(TimerHandle_t xTimer) {
+void timeoutCallback(TimerHandle_t xTimer) {
 	xEventGroupClearBits(eGrp, timeoutBit);
+}
+
+void ledTimerCallback(TimerHandle_t xTimer) {
+	static bool ledstate = false;
+
+	TickType_t time = xTaskGetTickCount();
+	vTimerSetTimerID(xTimer, (void*) time);
+
+	ledstate = !ledstate;
+	Board_LED_Set(1, ledstate);
 }
 
 void vTask1(void *param) {
 	general_setup();
 	xEventGroupSetBits(eGrp, timeoutBit);
-	timeout = xTimerCreate("Rx timeout", configTICK_RATE_HZ * 30, pdFALSE,
-			(void*) 0, timerCallback);
+	timeout = xTimerCreate("rx timeout", configTICK_RATE_HZ * 30, pdFALSE,
+			(void*) 0, timeoutCallback);
+
+	ledTimer = xTimerCreate("led toggle", configTICK_RATE_HZ * 5, pdTRUE,
+			(void*) 0, ledTimerCallback);
 
 	char str[STR_SIZE];
+	char sbuf[STR_SIZE];
 	char c;
 	int i;
 
 	uart->write("Ready\r\n");
+	xTimerStart(timeout, 0);
+	xTimerStart(ledTimer, 0);
 	while (1) {
 		i = 0;
 		c = 0;
@@ -278,22 +298,38 @@ void vTask1(void *param) {
 		while ((c != '\n' && c != '\r') && i < STR_SIZE - 1) {
 			if (xEventGroupGetBits(eGrp) & timeoutBit) {
 				//no timeout from timerCallback
-				if (uart->read(&c, 1, portMAX_DELAY)) {
+				if (uart->read(&c, 1, 200)) {
 					str[i] = c;
 					i++;
 					uart->write(c);
-					xEventGroupSetBits(eGrp, timeoutBit);
 					xTimerStart(timeout, 0);
 				}
 			} else { //timeout. Reset input buffer
 				i = 0;
-				uart->write("[Inactive]\r\n");
+				uart->write("\r\n[Inactive]\r\n");
 				xEventGroupSetBits(eGrp, timeoutBit);
 			}
 		}
 		ITM_write("string received\n");
 		uart->write("\r\n");
 		str[i] = '\0';
+
+		if (!strncmp(str, "help", 4)) {
+			uart->write("Available commands:\r\n\n"
+					"\"help\". Display this list.\r\n"
+					"\"interval <n>\". Set blinking interval in ms.\r\n"
+					"\"time\". Display time since last led toggle\r\n\n");
+
+		} else if (!strncmp(str, "interval ", 9)) {
+			xTimerChangePeriod(ledTimer, atoi(&str[9]), portMAX_DELAY); //set period, ms
+
+		} else if (!strncmp(str, "time", 4)) {	//print time since last led toggle
+			float time_delta = (float) (xTaskGetTickCount()
+					- (TickType_t) pvTimerGetTimerID(ledTimer))
+					/ configTICK_RATE_HZ;
+			sprintf(sbuf, "%.1fs\n\r", time_delta);
+			uart->write(sbuf);
+		}
 	}
 }
 #endif
